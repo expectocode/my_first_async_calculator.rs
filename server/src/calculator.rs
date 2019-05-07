@@ -4,13 +4,15 @@
 
 use std::io::{self, Cursor};
 
+use futures::SinkExt;
 use futures::{async_stream, StreamExt};
 use futures_util::io::{AsyncReadExt, AsyncWriteExt};
 use romio::TcpStream;
-
+use futures::channel::mpsc::UnboundedSender;
+use futures_util::io::WriteHalf;
 use calc_types::{Deserializer, MathRequest, MathResult, Operation, Serializer};
 
-pub async fn process_client(stream: TcpStream) -> io::Result<()> {
+pub async fn process_client(stream: TcpStream, mut tx: UnboundedSender<(bool, &WriteHalf<TcpStream>)>) -> io::Result<()> {
     let (mut read_stream, mut write_stream) = stream.split();
 
     let mut request_stream = Box::pin(get_requests(&mut read_stream));
@@ -18,11 +20,12 @@ pub async fn process_client(stream: TcpStream) -> io::Result<()> {
     while let Some(request) = await!(request_stream.next()) {
         println!("Math request: {:?}", &request);
 
-        let res = match &request.operation {
-            Operation::Addition => request.a + request.b,
-            Operation::Subtraction => request.a - request.b,
-            Operation::Multiplication => request.a * request.b,
-            Operation::Division => request.a / request.b,
+        let (res, s) = match &request.operation {
+            Operation::Addition => (request.a + request.b, "".into()),
+            Operation::Subtraction => (request.a - request.b, "".into()),
+            Operation::Multiplication => (request.a * request.b, "".into()),
+            Operation::Division => (request.a / request.b, "".into()),
+            Operation::Texting => (0.0, request.s),
         };
 
         println!("Result: {}", res);
@@ -30,6 +33,7 @@ pub async fn process_client(stream: TcpStream) -> io::Result<()> {
         let math_res = MathResult {
             id: request.id,
             res,
+            text: s,
         };
 
         let mut buf = Vec::<u8>::new();
@@ -39,6 +43,7 @@ pub async fn process_client(stream: TcpStream) -> io::Result<()> {
 
         await!(write_stream.write_all(&buf)).unwrap();
     }
+    tx.send((false, &write_stream));
 
     Ok(())
 }

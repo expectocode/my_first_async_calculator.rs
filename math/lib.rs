@@ -14,6 +14,7 @@ pub enum Operation {
     Subtraction,
     Multiplication,
     Division,
+    Texting,
 }
 
 #[derive(Debug)]
@@ -22,12 +23,14 @@ pub struct MathRequest {
     pub operation: Operation,
     pub a: f64,
     pub b: f64,
+    pub s: String,
 }
 
 #[derive(Debug)]
 pub struct MathResult {
     pub id: u32,
     pub res: f64,
+    pub text: String,
 }
 
 impl MathRequest {
@@ -37,6 +40,7 @@ impl MathRequest {
             operation: Operation::Addition,
             a,
             b,
+            s: "".into(),
         }
     }
 
@@ -46,6 +50,7 @@ impl MathRequest {
             operation: Operation::Subtraction,
             a,
             b,
+            s: "".into(),
         }
     }
 
@@ -55,6 +60,7 @@ impl MathRequest {
             operation: Operation::Multiplication,
             a,
             b,
+            s: "".into(),
         }
     }
 
@@ -64,6 +70,17 @@ impl MathRequest {
             operation: Operation::Division,
             a,
             b,
+            s: "".into(),
+        }
+    }
+
+    pub fn text(s: String) -> MathRequest {
+        MathRequest {
+            id: rand::random(),
+            operation: Operation::Texting,
+            a: 0.0,
+            b: 0.0,
+            s,
         }
     }
 }

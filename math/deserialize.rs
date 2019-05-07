@@ -32,6 +32,16 @@ impl Deserializable for f64 {
     }
 }
 
+impl Deserializable for String {
+    fn deserialize_from<T: Read>(buf: &mut T) -> io::Result<String> {
+        let mut s = String::new();
+        match buf.read_to_string(&mut s) {
+            Ok(_) => Ok(s),
+            Err(e) => Err(e),
+        }
+    }
+}
+
 impl Deserializable for Operation {
     fn deserialize_from<T: Read>(buf: &mut T) -> io::Result<Operation> {
         Ok(match buf.deserialize::<u32>()? {
@@ -39,6 +49,7 @@ impl Deserializable for Operation {
             1 => Operation::Subtraction,
             2 => Operation::Multiplication,
             3 => Operation::Division,
+            4 => Operation::Texting,
 
             _ => unreachable!(),
         })
@@ -52,6 +63,7 @@ impl Deserializable for MathRequest {
             operation: buf.deserialize()?,
             a: buf.deserialize()?,
             b: buf.deserialize()?,
+            s: buf.deserialize()?,
         })
     }
 }
@@ -61,6 +73,7 @@ impl Deserializable for MathResult {
         Ok(MathResult {
             id: buf.deserialize()?,
             res: buf.deserialize()?,
+            text: buf.deserialize()?,
         })
     }
 }

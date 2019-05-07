@@ -33,6 +33,12 @@ impl Serializable for f64 {
         Ok(())
     }
 }
+impl Serializable for String {
+    fn serialize_to<T: Write>(&self, buf: &mut T) -> io::Result<()> {
+        buf.write(self.as_bytes())?;
+        Ok(())
+    }
+}
 
 impl Serializable for Operation {
     fn serialize_to<T: Write>(&self, buf: &mut T) -> io::Result<()> {
@@ -41,6 +47,7 @@ impl Serializable for Operation {
             Operation::Subtraction => 1,
             Operation::Multiplication => 2,
             Operation::Division => 3,
+            Operation::Texting => 4,
         };
 
         val.serialize_to(buf)
@@ -53,6 +60,7 @@ impl Serializable for MathRequest {
         self.operation.serialize_to(buf)?;
         self.a.serialize_to(buf)?;
         self.b.serialize_to(buf)?;
+        self.s.serialize_to(buf)?;
 
         Ok(())
     }
