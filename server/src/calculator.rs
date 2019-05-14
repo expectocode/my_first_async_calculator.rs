@@ -3,6 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 use std::io::{self, Cursor};
+use std::net::SocketAddr;
+use std::sync::Arc;
+use std::collections::HashMap;
 
 use futures::SinkExt;
 use futures::{async_stream, StreamExt};
@@ -12,7 +15,7 @@ use futures::channel::mpsc::UnboundedSender;
 use futures_util::io::WriteHalf;
 use calc_types::{Deserializer, MathRequest, MathResult, Operation, Serializer};
 
-pub async fn process_client(stream: TcpStream, mut tx: UnboundedSender<(bool, &WriteHalf<TcpStream>)>) -> io::Result<()> {
+pub async fn process_client(stream: TcpStream, s: HashMap<&SocketAddr, &TcpStream>) -> io::Result<()> {
     let (mut read_stream, mut write_stream) = stream.split();
 
     let mut request_stream = Box::pin(get_requests(&mut read_stream));
@@ -42,8 +45,10 @@ pub async fn process_client(stream: TcpStream, mut tx: UnboundedSender<(bool, &W
         buf.serialize(&math_res).unwrap();
 
         await!(write_stream.write_all(&buf)).unwrap();
+
     }
-    tx.send((false, &write_stream));
+    // tx.send((false, &write_stream));
+    s.remove(&stream.peer_addr()?);
 
     Ok(())
 }
